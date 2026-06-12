@@ -156,7 +156,7 @@
   <div class="panel-bg">
     <div id="stars"></div>
     <canvas id="planet"></canvas>
-    <video id="geo" muted loop playsinline preload="auto">
+    <video id="geo" muted playsinline preload="auto">
       <source src="geology.mp4" type="video/mp4">
     </video>
     <div class="hero-scrim"></div>
@@ -378,6 +378,22 @@
   var marsTex=null, earthTex=null;
   var geo=document.getElementById('geo');
   var heroText=document.querySelector('#home .panel-inner');
+
+  /* background video: start (and loop back) at this second; set to 0 for normal looping */
+  var VIDEO_START=15;
+  function seekStart(){
+    if(!geo) return;
+    var d=geo.duration;
+    var s=(isFinite(d)&&d>VIDEO_START+0.1)?VIDEO_START:0;
+    try{ geo.currentTime=s; }catch(e){}
+  }
+  if(geo){
+    geo.addEventListener('loadedmetadata',seekStart);
+    geo.addEventListener('ended',function(){            // manual loop -> back to VIDEO_START
+      seekStart();
+      if(theme==='carbonate'){ var p=geo.play(); if(p&&p.catch) p.catch(function(){}); }
+    });
+  }
 
   function isPlanet(){return theme==='mars'||theme==='earth';}
   function isPOT(x){return (x&(x-1))===0;}
