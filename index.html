@@ -59,8 +59,11 @@
   #stars i{position:absolute;background:#fff;border-radius:50%;opacity:.7}
   @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:.9}}
   #planet{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block}
-  .hero-scrim{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(0,0,0,.78) 100%)}
-  #home .panel-inner{justify-content:flex-end}
+  #geo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:0;transition:opacity .6s var(--ease);pointer-events:none}
+  #geo.show{opacity:1}
+  .hero-scrim{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,0) 55%,rgba(0,0,0,.78) 100%)}
+  #home .panel-inner{justify-content:flex-end;transition:opacity .45s var(--ease),transform .45s var(--ease)}
+  #home .panel-inner.fading{opacity:0;transform:translateY(14px)}
   #home h2{font-size:clamp(2.4rem,7vw,5.4rem);font-weight:300}
   #home h2 b{font-weight:500}
 
@@ -153,20 +156,23 @@
   <div class="panel-bg">
     <div id="stars"></div>
     <canvas id="planet"></canvas>
+    <video id="geo" muted loop playsinline preload="auto">
+      <source src="geology.mp4" type="video/mp4">
+    </video>
     <div class="hero-scrim"></div>
   </div>
   <div class="panel-inner in">
-    <p class="eyebrow">Postdoctoral Researcher · Horgan Group · Purdue EAPS</p>
-    <h2>Decoding the<br><b>Carbon History</b> of Mars</h2>
-    <p class="lead">Orbital hyperspectral mapping, cryogenic Earth analogs, and geochemical modeling — reconstructing where a wetter Mars locked away its carbon.</p>
+    <p class="eyebrow">Chemical Weathering · Carbon Cycle · Hydrochemistry</p>
+    <h2>Tracing Chemical Weathering and<br>Source-to-Sink Processes of <b>Carbonate</b></h2>
+    <p class="lead">Fluvial, lacustrine, palustrine, pedogenic, cryogenic and more — reconstructing the chemical weathering and carbon fixation pathways.</p>
     <div class="btn-row">
       <a href="#crism" class="ghost">Research</a>
       <a href="#publications" class="ghost">Publications</a>
     </div>
   </div>
   <div class="theme-switch" id="themeSwitch">
-    <button data-theme="space">Deep Space</button>
-    <button data-theme="mars" class="active">Mars</button>
+    <button data-theme="carbonate" class="active">Planetary Carbonate</button>
+    <button data-theme="mars">Mars</button>
     <button data-theme="earth">Earth</button>
   </div>
   <div class="scroll-cue">Scroll</div>
@@ -367,9 +373,11 @@
   function compile(type,src){var sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);
     if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(sh));}return sh;}
 
-  var theme='mars', raf=null, t0=performance.now(), inView=true, ready=false;
+  var theme='carbonate', raf=null, t0=performance.now(), inView=true, ready=false;
   var uTimeL,uResL,uPlanetL,uRadiusL,uCenterYL,uFocalL,uTexL,uHasTexL;
   var marsTex=null, earthTex=null;
+  var geo=document.getElementById('geo');
+  var heroText=document.querySelector('#home .panel-inner');
 
   function isPlanet(){return theme==='mars'||theme==='earth';}
   function isPOT(x){return (x&(x-1))===0;}
@@ -457,12 +465,32 @@
   function loop(now){ if(!isPlanet()||!inView||reduce||!ready){raf=null;return;} render(now); raf=requestAnimationFrame(loop); }
   function start(){ if(!ready) return; if(!isPlanet()){render(performance.now());return;} if(reduce){render(performance.now());return;} if(!raf) raf=requestAnimationFrame(loop); }
 
+  /* show/hide + play/pause the background video for the carbonate view */
+  function updateVideo(){
+    if(!geo) return;
+    if(theme==='carbonate'){
+      geo.classList.add('show');
+      if(!reduce){ var p=geo.play(); if(p&&p.catch) p.catch(function(){}); }
+    } else {
+      geo.classList.remove('show');
+      geo.pause();
+    }
+  }
+  /* fade the centered hero text out then back in */
+  function fadeText(){
+    if(!heroText) return;
+    heroText.classList.add('fading');
+    setTimeout(function(){ heroText.classList.remove('fading'); }, 450);
+  }
+
   /* theme switcher */
   var sw=document.getElementById('themeSwitch');
   sw.addEventListener('click',function(ev){
     var btn=ev.target.closest('button'); if(!btn) return;
     theme=btn.getAttribute('data-theme');
     sw.querySelectorAll('button').forEach(function(b){b.classList.toggle('active',b===btn);});
+    fadeText();
+    updateVideo();
     if(raf){cancelAnimationFrame(raf);raf=null;}
     start();
   });
@@ -474,6 +502,7 @@
   }
 
   window.addEventListener('resize',resize,{passive:true});
+  updateVideo();
   start();
 })();
 </script>
